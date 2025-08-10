@@ -1,69 +1,24 @@
-# React + TypeScript + Vite
+# MovieTracker 🎬🍿  
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Aplicação React + TypeScript para explorar filmes e séries, com sistema de avaliações personalizadas e listagem detalhada de conteúdo.  
 
-Currently, two official plugins are available:
+![MovieTracker Demo](https://example.com/sua-demo-gif-aqui.gif) *(adicione um GIF ou screenshot real do seu projeto)*  
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## ✨ Funcionalidades  
 
-## Expanding the ESLint configuration
+- 🎥 **Catálogo completo** de filmes e séries via API TMDB  
+- ⭐ **Sistema de avaliações** com comentários (Firebase Firestore)  
+- 🔍 **Busca avançada** por título, gênero e tipo (filme/série)  
+- 📺 **Player integrado** - trailers direto do YouTube  
+- 📱 **Design responsivo** - perfeito para mobile e desktop  
+- 🔐 **Autenticação segura** com Firebase Auth  
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+## 🛠️ Tecnologias Utilizadas  
 
-```js
-export default tseslint.config([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+- **React.js** + **TypeScript** - Base do projeto  
+- **Firebase** - Autenticação e banco de dados (Firestore)  
+- **TMDB API** - Dados de filmes/séries  
+- **React Router** - Navegação entre páginas  
+- **Styled Components** - Estilização avançada  
+- **React Toastify** - Notificações do sistema  
 
-      // Remove tseslint.configs.recommended and replace with this
-      ...tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      ...tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      ...tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
-
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
-
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default tseslint.config([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
