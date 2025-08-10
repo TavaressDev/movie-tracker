@@ -26,12 +26,12 @@ interface Media {
   title?: string;
   name?: string;
   poster_path: string | null;
+  backdrop_path: string | null;
   vote_average: number;
   genre_ids?: number[];
   release_date?: string;
   first_air_date?: string;
 }
-
 interface Genre {
   id: number;
   name: string;
@@ -49,6 +49,15 @@ export function Home({ searchQuery, onSearchChange, onMediaTypeChange }: HomePro
   const [genres, setGenres] = useState<Genre[]>([]);
   const [filterType, setFilterType] = useState<'top_rated' | 'latest'>('top_rated');
   const navigate = useNavigate();
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+
+useEffect(() => {
+  const handleResize = () => {
+    setIsMobile(window.innerWidth < 768);
+  };
+  window.addEventListener('resize', handleResize);
+  return () => window.removeEventListener('resize', handleResize);
+}, []);
 
   const handleOptionSelect = (option: 'movies' | 'series') => {
     setSelectedOption(option);
@@ -280,29 +289,30 @@ export function Home({ searchQuery, onSearchChange, onMediaTypeChange }: HomePro
         <>
           <MediaGrid>
             {media.map((item) => (
-              <MediaCard  
-                key={item.id}
-                onClick={() => navigate(`/media/${selectedOption === 'movies' ? 'movie' : 'tv'}/${item.id}`)}
-              >
-                {item.poster_path ? (
-                  <img
-                    src={`https://image.tmdb.org/t/p/w500${item.poster_path}`}
-                    alt={item.title || item.name || 'Mídia sem título'}
-                    loading="lazy"
-                  />
-                ) : (
-                  <div className="placeholder">Sem imagem</div>
-                )}
-                <h3>{item.title || item.name || 'Título desconhecido'}</h3>
-                <span>{item.vote_average.toFixed(1)} ★</span>
-                {filterType === 'latest' && (
-                  <span className="release-date">
-                    {selectedOption === 'movies' 
-                      ? item.release_date?.substring(0, 4) 
-                      : item.first_air_date?.substring(0, 4)}
-                  </span>
-                )}
-              </MediaCard>
+             <MediaCard  
+             key={item.id}
+             onClick={() => navigate(`/media/${selectedOption === 'movies' ? 'movie' : 'tv'}/${item.id}`)}
+             $isMobile={isMobile}
+           >
+             {((isMobile && item.backdrop_path) || (!isMobile && item.poster_path)) ? (
+               <img
+                 src={`https://image.tmdb.org/t/p/${isMobile ? 'w780' : 'w500'}${isMobile ? item.backdrop_path : item.poster_path}`}
+                 alt={item.title || item.name || 'Mídia sem título'}
+                 loading="lazy"
+               />
+             ) : (
+               <div className="placeholder">Sem imagem</div>
+             )}
+             <h3>{item.title || item.name || 'Título desconhecido'}</h3>
+             <span>{item.vote_average.toFixed(1)} ★</span>
+             {filterType === 'latest' && (
+               <span className="release-date">
+                 {selectedOption === 'movies' 
+                   ? item.release_date?.substring(0, 4) 
+                   : item.first_air_date?.substring(0, 4)}
+               </span>
+             )}
+           </MediaCard>
             ))}
           </MediaGrid>
 

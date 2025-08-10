@@ -36,32 +36,34 @@ export const MediaGrid = styled.div`
   }
 `;
 
-export const MediaCard = styled.div`
+export const MediaCard = styled.div<{ $isMobile?: boolean }>`
   background: #fff;
   border-radius: 8px;
   overflow: hidden;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   transition: transform 0.3s ease;
   cursor: pointer;
-  width: 100%; 
-  max-width: 200px; 
+  width: 100%;
+  max-width: ${({ $isMobile }) => $isMobile ? '100%' : '200px'};
 
   @media (max-width: 480px) {
-    max-width: 280px; 
+    max-width: 100%;
   }
+
   &:hover {
     transform: translateY(-5px);
   }
 
   img {
     width: 100%;
-    height: 300px;
+    height: ${({ $isMobile }) => $isMobile ? 'auto' : '300px'};
+    aspect-ratio: ${({ $isMobile }) => $isMobile ? '16/9' : '2/3'};
     object-fit: cover;
   }
 
   .placeholder {
     width: 100%;
-    height: 300px;
+    height: ${({ $isMobile }) => $isMobile ? '180px' : '300px'};
     background: #eee;
     display: flex;
     align-items: center;
@@ -76,6 +78,13 @@ export const MediaCard = styled.div`
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    
+    @media (max-width: 480px) {
+      white-space: normal;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+    }
   }
 
   span {
