@@ -6,9 +6,7 @@ import { Logo } from "../../../components/Logo";
 import { ButtonContainer, InputContainer, RegisterContainer } from "./styles";
 import { auth, db } from "../../../firebaseConfig";
 import { doc, setDoc } from "firebase/firestore";
-import { FirebaseError } from "firebase/app";
 import { toast } from "react-toastify";
-import 'react-toastify/dist/ReactToastify.css';
 
 export function Register() {
   const [name, setName] = useState("");
@@ -22,7 +20,7 @@ export function Register() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
-    setIsLoading(true);
+    setIsLoading(true); 
     
     if (password !== confirmPassword) {
       setError("As senhas não coincidem");
@@ -37,47 +35,36 @@ export function Register() {
         uid: userCredential.user.uid,
         displayName: name,
         email: email,
-        photoURL: '', 
+        photoURL: '',
         joinedAt: new Date(),
         bio: ''
       });
 
       await auth.signOut();
-      
-      navigate("/login", { 
-        replace: true,
-        state: { from: 'registration' }
-      });
-      
+
+      navigate("/login", { replace: true });
       toast.success("Registro realizado com sucesso! Faça login para continuar.");
       
-    } catch (error) { 
+    } catch (error) {
       setIsLoading(false);
-      let errorMessage = "Falha no registro. Verifique seus dados.";
+      let errorMessage = "Falha no registro. O e-mail pode já estar em uso.";
       
-      if (error instanceof FirebaseError) {
-        switch (error.code) {
-          case "auth/email-already-in-use":
+      if (error instanceof Error) {
+        switch (error.message) {
+          case "Firebase: Error (auth/email-already-in-use).":
             errorMessage = "Este e-mail já está em uso.";
             break;
-          case "auth/weak-password":
+          case "Firebase: Error (auth/weak-password).":
             errorMessage = "A senha deve ter pelo menos 6 caracteres.";
             break;
-          case "auth/invalid-email":
+          case "Firebase: Error (auth/invalid-email).":
             errorMessage = "E-mail inválido.";
             break;
-          case "auth/operation-not-allowed":
-            errorMessage = "Operação não permitida.";
-            break;
-          default:
-            errorMessage = `Erro: ${error.message}`;
         }
-      } else if (error instanceof Error) {
-        errorMessage = error.message;
       }
       
       setError(errorMessage);
-      console.error("Erro detalhado:", error);
+      console.error(error);
     }
   };
 

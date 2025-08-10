@@ -123,7 +123,6 @@ export function MediaDetails() {
       const querySnapshot = await getDocs(q);
       const firestoreComments = querySnapshot.docs.map(doc => {
         const data = doc.data();
-        // Garante que todos os campos obrigatórios existam
         return {
           id: doc.id,
           author: data.userName || data.userId || "Anônimo",
@@ -250,9 +249,22 @@ export function MediaDetails() {
         createdAt: new Date(),
       };
   
-      await addDoc(collection(db, "reviews"), reviewData);
+      const docRef = await addDoc(collection(db, "reviews"), reviewData);
       
-      await fetchComments();
+      const newCommentObj: Comment = {
+        id: docRef.id,
+        author: reviewData.userName,
+        userId: user.uid,
+        text: newComment,
+        timestamp: new Date().toISOString(),
+        rating: newRating
+      };
+  
+      setComments(prev => {
+        const updatedComments = [newCommentObj, ...prev];
+        localStorage.setItem(`comments-${mediaType}-${id}`, JSON.stringify(updatedComments));
+        return updatedComments;
+      });
       
       setNewComment('');
       setNewRating(0);
