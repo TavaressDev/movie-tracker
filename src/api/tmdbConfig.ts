@@ -1,0 +1,4 @@
+export const TMDB_API_KEY = '0f7dbd468e88b5d5ad1b7104b22c5e37'; 
+export const TMDB_ACCESS_TOKEN = 'eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiIwZjdkYmQ0NjhlODhiNWQ1YWQxYjcxMDRiMjJjNWUzNyIsIm5iZiI6MTc0ODA0MzY4My45OTIsInN1YiI6IjY4MzEwN2EzYmMxZTY0NGM3YTgzNzJjMiIsInNjb3BlcyI6WyJhcGlfcmVhZCJdLCJ2ZXJzaW9uIjoxfQ.Volp3l9lE6WLCAdsBqj5btuyPEOGsMo1v1gViHBGu6s';
+
+export const TMDB_BASE_URL = 'https://api.themoviedb.org/3';
