@@ -105,14 +105,6 @@ export function MediaDetails() {
   const [newRating, setNewRating] = useState(0);
   const [ratingError, setRatingError] = useState(false);
   const [loadingComments, setLoadingComments] = useState(true);
-  const [initialLoad, setInitialLoad] = useState(true);
-
-  useEffect(() => {
-    const cachedComments = sessionStorage.getItem(`comments-${id}`);
-    if (cachedComments) {
-      setComments(JSON.parse(cachedComments));
-    }
-  }, [id]);
 
   const fetchComments = useCallback(() => {
     if (!id || !mediaType) return;
@@ -128,34 +120,35 @@ export function MediaDetails() {
 
     const unsubscribe = onSnapshot(q, 
       (querySnapshot) => {
-        const firestoreComments = querySnapshot.docs.map(doc => {
-          const data = doc.data();
-          return {
-            id: doc.id,
-            author: data.userName || data.userId || "Anônimo",
-            userId: data.userId,
-            text: data.text || "",
-            rating: data.rating || 0,
-            timestamp: data.createdAt?.toDate()?.toISOString() || new Date().toISOString()
-          };
-        });
+        if (querySnapshot.empty && comments.length === 0) {
+          setLoadingComments(false);
+          return;
+        }
+        
+        const firestoreComments = querySnapshot.docs.map(doc => ({
+          id: doc.id,
+          author: doc.data().userName || doc.data().userId || "Anônimo",
+          userId: doc.data().userId,
+          text: doc.data().text || "",
+          rating: doc.data().rating || 0,
+          timestamp: doc.data().createdAt?.toDate()?.toISOString() || new Date().toISOString()
+        }));
         
         setComments(firestoreComments);
-        sessionStorage.setItem(`comments-${id}`, JSON.stringify(firestoreComments));
         setLoadingComments(false);
-        
-        if (initialLoad) {
-          setTimeout(() => setInitialLoad(false), 500);
-        }
       },
       (error) => {
         console.error("Error loading comments:", error);
         setLoadingComments(false);
+        // Mostra comentários em cache se houver
+        if (comments.length > 0) {
+          setLoadingComments(false);
+        }
       }
     );
 
     return unsubscribe;
-  }, [id, mediaType, initialLoad]);
+  }, [id, mediaType, comments.length]);
 
   useEffect(() => {
     const unsubscribe = fetchComments();
@@ -163,6 +156,16 @@ export function MediaDetails() {
       if (unsubscribe) unsubscribe();
     };
   }, [fetchComments]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (loadingComments) {
+        setLoadingComments(false);
+      }
+    }, 5000); // Timeout após 5 segundos
+
+    return () => clearTimeout(timer);
+  }, [loadingComments]);
 
   const fetchEpisodes = useCallback(async (seasonNumber: number) => {
     try {
@@ -382,7 +385,7 @@ export function MediaDetails() {
         </>
       )}
 
-<CommentsSection>
+      <CommentsSection>
         <CommentsTitle>Comentários</CommentsTitle>
         
         {user ? (
@@ -413,10 +416,25 @@ export function MediaDetails() {
           <p>Faça login para deixar um comentário</p>
         )}
         
-        {initialLoad ? (
-          <div>Carregando...</div>
-        ) : loadingComments ? (
-          <div>Atualizando comentários...</div>
+        {loadingComments ? (
+          comments.length > 0 ? (
+            <>
+              <p>Carregando novos comentários...</p>
+              {/* Mostra comentários existentes enquanto carrega */}
+              {comments.map(comment => (
+                <CommentItem key={comment.id}>
+                  <CommentAuthor onClick={() => navigate(`/profile/${comment.userId}`)}>
+                    {comment.author}
+                    <StarRating rating={comment.rating} />
+                  </CommentAuthor>
+                  <CommentText>{comment.text}</CommentText>
+                  <small>{new Date(comment.timestamp).toLocaleDateString()}</small>
+                </CommentItem>
+              ))}
+            </>
+          ) : (
+            <div>Carregando comentários...</div>
+          )
         ) : (
           <CommentsList>
             {comments.length > 0 ? (
