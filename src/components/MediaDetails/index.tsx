@@ -2,7 +2,7 @@ import { useEffect, useState, type FormEvent, useCallback } from "react";
 import { useAuth } from "../../hooks/useAuth";
 import { useParams, useNavigate } from "react-router-dom";
 import { TMDB_BASE_URL, TMDB_ACCESS_TOKEN } from "../../api/tmdbConfig";
-import { addDoc, collection, query, where, orderBy, onSnapshot } from "firebase/firestore";
+import { addDoc, collection, query, where, orderBy, onSnapshot, serverTimestamp } from "firebase/firestore";
 import { db } from "../../firebaseConfig";
 import { 
   DetailsContainer,
@@ -100,11 +100,19 @@ export function MediaDetails() {
   const [episodes, setEpisodes] = useState<Episode[]>([]);
   const [loading, setLoading] = useState(true);
   const [trailerKey, setTrailerKey] = useState<string | null>(null);
-  const [comments, setComments] = useState<Comment[]>([]); 
+  const [comments, setComments] = useState<Comment[]>([]);
   const [newComment, setNewComment] = useState('');
   const [newRating, setNewRating] = useState(0);
   const [ratingError, setRatingError] = useState(false);
   const [loadingComments, setLoadingComments] = useState(true);
+  const [initialLoad, setInitialLoad] = useState(true);
+
+  useEffect(() => {
+    const cachedComments = sessionStorage.getItem(`comments-${id}`);
+    if (cachedComments) {
+      setComments(JSON.parse(cachedComments));
+    }
+  }, [id]);
 
   const fetchComments = useCallback(() => {
     if (!id || !mediaType) return;
@@ -118,25 +126,36 @@ export function MediaDetails() {
       orderBy("createdAt", "desc")
     );
 
-    const unsubscribe = onSnapshot(q, (querySnapshot) => {
-      const firestoreComments = querySnapshot.docs.map(doc => {
-        const data = doc.data();
-        return {
-          id: doc.id,
-          author: data.userName || data.userId || "Anônimo",
-          userId: data.userId,
-          text: data.text || "",
-          rating: data.rating || 0,
-          timestamp: data.createdAt?.toDate()?.toISOString() || new Date().toISOString()
-        };
-      });
-      
-      setComments(firestoreComments);
-      setLoadingComments(false);
-    });
+    const unsubscribe = onSnapshot(q, 
+      (querySnapshot) => {
+        const firestoreComments = querySnapshot.docs.map(doc => {
+          const data = doc.data();
+          return {
+            id: doc.id,
+            author: data.userName || data.userId || "Anônimo",
+            userId: data.userId,
+            text: data.text || "",
+            rating: data.rating || 0,
+            timestamp: data.createdAt?.toDate()?.toISOString() || new Date().toISOString()
+          };
+        });
+        
+        setComments(firestoreComments);
+        sessionStorage.setItem(`comments-${id}`, JSON.stringify(firestoreComments));
+        setLoadingComments(false);
+        
+        if (initialLoad) {
+          setTimeout(() => setInitialLoad(false), 500);
+        }
+      },
+      (error) => {
+        console.error("Error loading comments:", error);
+        setLoadingComments(false);
+      }
+    );
 
     return unsubscribe;
-  }, [id, mediaType]);
+  }, [id, mediaType, initialLoad]);
 
   useEffect(() => {
     const unsubscribe = fetchComments();
@@ -144,6 +163,7 @@ export function MediaDetails() {
       if (unsubscribe) unsubscribe();
     };
   }, [fetchComments]);
+
   const fetchEpisodes = useCallback(async (seasonNumber: number) => {
     try {
       const response = await fetch(
@@ -240,7 +260,8 @@ export function MediaDetails() {
         mediaPoster,
         rating: newRating,
         text: newComment,
-        createdAt: new Date(),
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp()
       });
       
       setNewComment('');
@@ -253,7 +274,6 @@ export function MediaDetails() {
 
   if (loading) return <div>Carregando...</div>;
   if (!media) return <div>Não foi possível carregar os detalhes</div>;
-
   return (
     <DetailsContainer>
       {media.backdrop_path && (
@@ -362,7 +382,7 @@ export function MediaDetails() {
         </>
       )}
 
-      <CommentsSection>
+<CommentsSection>
         <CommentsTitle>Comentários</CommentsTitle>
         
         {user ? (
@@ -393,8 +413,10 @@ export function MediaDetails() {
           <p>Faça login para deixar um comentário</p>
         )}
         
-        {loadingComments ? (
-          <div>Carregando comentários...</div>
+        {initialLoad ? (
+          <div>Carregando...</div>
+        ) : loadingComments ? (
+          <div>Atualizando comentários...</div>
         ) : (
           <CommentsList>
             {comments.length > 0 ? (
