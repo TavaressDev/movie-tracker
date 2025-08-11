@@ -100,7 +100,7 @@ export function MediaDetails() {
   const [episodes, setEpisodes] = useState<Episode[]>([]);
   const [loading, setLoading] = useState(true);
   const [trailerKey, setTrailerKey] = useState<string | null>(null);
-  const [comments, setComments] = useState<Comment[]>([]); // Removido localStorage
+  const [comments, setComments] = useState<Comment[]>([]); 
   const [newComment, setNewComment] = useState('');
   const [newRating, setNewRating] = useState(0);
   const [ratingError, setRatingError] = useState(false);
