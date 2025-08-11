@@ -2,7 +2,18 @@
 
 Aplicação React + TypeScript para explorar filmes e séries, com sistema de avaliações personalizadas e listagem detalhada de conteúdo.  
 
-![MovieTracker Demo](https://example.com/sua-demo-gif-aqui.gif) *(adicione um GIF ou screenshot real do seu projeto)*  
+
+
+
+
+
+
+https://github.com/user-attachments/assets/f0e706d7-4b2e-4a70-8d99-75ac601578a4
+
+
+
+
+
 
 ## ✨ Funcionalidades  
 
