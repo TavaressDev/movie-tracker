@@ -2,7 +2,7 @@ import { useEffect, useState, type FormEvent, useCallback } from "react";
 import { useAuth } from "../../hooks/useAuth";
 import { useParams, useNavigate } from "react-router-dom";
 import { TMDB_BASE_URL, TMDB_ACCESS_TOKEN } from "../../api/tmdbConfig";
-import { addDoc, collection, query, where, orderBy, getDocs } from "firebase/firestore";
+import { addDoc, collection, query, where, orderBy, onSnapshot } from "firebase/firestore";
 import { db } from "../../firebaseConfig";
 import { 
   DetailsContainer,
@@ -100,27 +100,25 @@ export function MediaDetails() {
   const [episodes, setEpisodes] = useState<Episode[]>([]);
   const [loading, setLoading] = useState(true);
   const [trailerKey, setTrailerKey] = useState<string | null>(null);
-  const [comments, setComments] = useState<Comment[]>(() => {
-    const savedComments = localStorage.getItem(`comments-${mediaType}-${id}`);
-    return savedComments ? JSON.parse(savedComments) : [];
-  });
+  const [comments, setComments] = useState<Comment[]>([]); // Removido localStorage
   const [newComment, setNewComment] = useState('');
   const [newRating, setNewRating] = useState(0);
   const [ratingError, setRatingError] = useState(false);
   const [loadingComments, setLoadingComments] = useState(true);
 
-  const fetchComments = useCallback(async () => {
-    try {
-      if (!id || !mediaType) return; 
-  
-      const q = query(
-        collection(db, "reviews"),
-        where("mediaId", "==", id),
-        where("mediaType", "==", mediaType),
-        orderBy("createdAt", "desc")
-      );
-      
-      const querySnapshot = await getDocs(q);
+  const fetchComments = useCallback(() => {
+    if (!id || !mediaType) return;
+
+    setLoadingComments(true);
+    
+    const q = query(
+      collection(db, "reviews"),
+      where("mediaId", "==", id),
+      where("mediaType", "==", mediaType),
+      orderBy("createdAt", "desc")
+    );
+
+    const unsubscribe = onSnapshot(q, (querySnapshot) => {
       const firestoreComments = querySnapshot.docs.map(doc => {
         const data = doc.data();
         return {
@@ -134,22 +132,18 @@ export function MediaDetails() {
       });
       
       setComments(firestoreComments);
-      localStorage.setItem(`comments-${mediaType}-${id}`, JSON.stringify(firestoreComments));
-    } catch (error) {
-      console.error("Error fetching comments:", error);
-      const savedComments = localStorage.getItem(`comments-${mediaType}-${id}`);
-      if (savedComments) {
-        setComments(JSON.parse(savedComments));
-      }
-    } finally {
       setLoadingComments(false);
-    }
+    });
+
+    return unsubscribe;
   }, [id, mediaType]);
 
   useEffect(() => {
-    fetchComments();
+    const unsubscribe = fetchComments();
+    return () => {
+      if (unsubscribe) unsubscribe();
+    };
   }, [fetchComments]);
-
   const fetchEpisodes = useCallback(async (seasonNumber: number) => {
     try {
       const response = await fetch(
@@ -230,14 +224,14 @@ export function MediaDetails() {
     }
     
     if (!newComment.trim() || !user || !id || !mediaType) return;
-  
+
     try {
       const mediaTitle = media?.title || media?.name || 'Mídia sem título';
       const mediaPoster = media?.poster_path 
         ? `https://image.tmdb.org/t/p/w500${media.poster_path}`
         : null;
-  
-      const reviewData = {
+
+      await addDoc(collection(db, "reviews"), {
         userId: user.uid,
         userName: user.displayName || user.email?.split('@')[0] || "Usuário",
         mediaId: id,
@@ -247,23 +241,6 @@ export function MediaDetails() {
         rating: newRating,
         text: newComment,
         createdAt: new Date(),
-      };
-  
-      const docRef = await addDoc(collection(db, "reviews"), reviewData);
-      
-      const newCommentObj: Comment = {
-        id: docRef.id,
-        author: reviewData.userName,
-        userId: user.uid,
-        text: newComment,
-        timestamp: new Date().toISOString(),
-        rating: newRating
-      };
-  
-      setComments(prev => {
-        const updatedComments = [newCommentObj, ...prev];
-        localStorage.setItem(`comments-${mediaType}-${id}`, JSON.stringify(updatedComments));
-        return updatedComments;
       });
       
       setNewComment('');
